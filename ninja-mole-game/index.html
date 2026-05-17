@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>닌자두더지: 그림자 땅굴</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #121015;
+      --soil: #4b2e24;
+      --soil-dark: #24140f;
+      --moss: #79d87a;
+      --gold: #ffd166;
+      --danger: #ff5c7a;
+      --sky: #89c2ff;
+      --paper: #f7efd8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #0e1117;
+      color: var(--paper);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+    }
+
+    .shell {
+      width: min(100vw, 1200px);
+      height: min(100vh, 760px);
+      position: relative;
+      background:
+        radial-gradient(circle at 20% 12%, rgba(255, 209, 102, 0.16), transparent 22%),
+        linear-gradient(#5ca8f0 0 42%, #23301f 42% 46%, #4b2e24 46% 100%);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      cursor: none;
+    }
+
+    .hud {
+      position: absolute;
+      inset: 16px 16px auto;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      pointer-events: none;
+      gap: 12px;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.28);
+    }
+
+    .brand {
+      font-weight: 900;
+      letter-spacing: 0;
+      line-height: 1;
+      font-size: clamp(22px, 3vw, 42px);
+    }
+
+    .stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .pill {
+      min-width: 88px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(15, 18, 22, 0.52);
+      backdrop-filter: blur(8px);
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .pill b {
+      display: block;
+      font-size: 11px;
+      color: rgba(247, 239, 216, 0.72);
+      font-weight: 800;
+    }
+
+    .pill span {
+      display: block;
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1.1;
+    }
+
+    .bars {
+      justify-self: end;
+      width: min(36vw, 260px);
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar {
+      height: 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      overflow: hidden;
+      background: rgba(15, 18, 22, 0.58);
+    }
+
+    .bar > i {
+      display: block;
+      height: 100%;
+      width: 100%;
+      transform-origin: left center;
+      background: linear-gradient(90deg, #69f0ae, #ffd166);
+    }
+
+    .bar.stamina > i {
+      background: linear-gradient(90deg, #8bd3ff, #79d87a);
+    }
+
+    .bar.fever > i {
+      background: linear-gradient(90deg, #ff5c7a, #ffd166, #79d87a);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(rgba(10, 13, 18, 0.36), rgba(10, 13, 18, 0.52));
+      padding: 24px;
+      text-align: center;
+    }
+
+    .panel {
+      width: min(560px, 92vw);
+      border-radius: 8px;
+      padding: 24px;
+      background: rgba(15, 18, 22, 0.76);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(36px, 8vw, 76px);
+      line-height: 0.94;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 0 auto 20px;
+      color: rgba(247, 239, 216, 0.78);
+      font-size: 16px;
+      line-height: 1.5;
+      max-width: 42ch;
+    }
+
+    .keys {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 0 0 20px;
+    }
+
+    kbd {
+      min-width: 38px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      background: #f7efd8;
+      color: #17130f;
+      font-weight: 900;
+      box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.24);
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 14px 18px;
+      color: #1c140d;
+      background: linear-gradient(180deg, #ffe28c, #ffb84c);
+      font: inherit;
+      font-weight: 950;
+      min-width: 190px;
+      box-shadow: 0 8px 0 #8e4f1f, 0 16px 30px rgba(0, 0, 0, 0.22);
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: translateY(4px);
+      box-shadow: 0 4px 0 #8e4f1f, 0 12px 20px rgba(0, 0, 0, 0.22);
+    }
+
+    .combo-pop {
+      position: absolute;
+      left: 50%;
+      top: 21%;
+      transform: translate(-50%, -50%) scale(1);
+      font-size: clamp(28px, 6vw, 72px);
+      font-weight: 1000;
+      color: #fff8d4;
+      text-shadow: 0 4px 0 #bf2b48, 0 8px 28px rgba(255, 92, 122, 0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 120ms ease, transform 160ms ease;
+      white-space: nowrap;
+    }
+
+    .combo-pop.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.08);
+    }
+
+    @media (max-width: 700px) {
+      .shell {
+        width: 100vw;
+        height: 100vh;
+        border: 0;
+      }
+
+      .hud {
+        inset: 10px 10px auto;
+        grid-template-columns: 1fr;
+      }
+
+      .brand {
+        display: none;
+      }
+
+      .stats {
+        justify-content: space-between;
+      }
+
+      .pill {
+        min-width: 72px;
+        padding: 7px 8px;
+      }
+
+      .pill span {
+        font-size: 17px;
+      }
+
+      .bars {
+        justify-self: stretch;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell" id="shell" aria-label="닌자두더지 게임">
+    <canvas id="game"></canvas>
+
+    <section class="hud" aria-live="polite">
+      <div class="brand">닌자두더지<br>그림자 땅굴</div>
+      <div class="stats">
+        <div class="pill"><b>점수</b><span id="score">0</span></div>
+        <div class="pill"><b>콤보</b><span id="combo">0</span></div>
+        <div class="pill"><b>배율</b><span id="multi">x1.0</span></div>
+        <div class="pill"><b>시간</b><span id="time">60</span></div>
+      </div>
+      <div class="bars">
+        <div class="bar"><i id="oxygen"></i></div>
+        <div class="bar stamina"><i id="stamina"></i></div>
+        <div class="bar fever"><i id="fever"></i></div>
+      </div>
+    </section>
+
+    <div class="combo-pop" id="comboPop">PERFECT x10</div>
+
+    <section class="overlay" id="overlay">
+      <div class="panel">
+        <h1>그림자<br>땅굴</h1>
+        <p class="lead">깊이 잠수할수록 점수 배율이 오릅니다. 적의 발밑에서 튀어나와 베고, 피버를 터뜨리세요.</p>
+        <div class="keys" aria-hidden="true">
+          <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>Space</kbd><kbd>R</kbd>
+        </div>
+        <button id="startBtn" type="button">잠입 시작</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const shell = document.getElementById("shell");
+    const overlay = document.getElementById("overlay");
+    const startBtn = document.getElementById("startBtn");
+    const scoreEl = document.getElementById("score");
+    const comboEl = document.getElementById("combo");
+    const multiEl = document.getElementById("multi");
+    const timeEl = document.getElementById("time");
+    const oxygenEl = document.getElementById("oxygen");
+    const staminaEl = document.getElementById("stamina");
+    const feverEl = document.getElementById("fever");
+    const comboPop = document.getElementById("comboPop");
+
+    const keys = new Set();
+    const touch = { active: false, x: 0, y: 0 };
+    const state = {
+      running: false,
+      over: false,
+      score: 0,
+      best: Number(localStorage.getItem("ninjaMoleBest") || 0),
+      combo: 0,
+      time: 60,
+      spawnTimer: 0,
+      powerTimer: 0,
+      shake: 0,
+      message: "",
+      messageTimer: 0,
+      slow: 0,
+      fever: 0,
+      feverTime: 0,
+      maxCombo: 0,
+      kills: 0,
+      perfects: 0,
+      deepKills: 0,
+      feverKills: 0,
+      nearMiss: 0
+    };
+
+    const world = {
+      w: 1000,
+      h: 650,
+      ground: 300,
+      floor: 590
+    };
+
+    const mole = {
+      x: 500,
+      y: 505,
+      vx: 0,
+      underground: true,
+      surfacing: 0,
+      depth: 0,
+      oxygen: 1,
+      stamina: 1,
+      invuln: 0,
+      dash: 0,
+      clones: 0
+    };
+
+    let enemies = [];
+    let particles = [];
+    let slashes = [];
+    let powerups = [];
+    let last = performance.now();
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = shell.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      world.w = rect.width;
+      world.h = rect.height;
+      world.ground = rect.height * 0.46;
+      world.floor = rect.height - 72;
+      mole.y = world.floor - 28;
+    }
+
+    function reset() {
+      state.running = true;
+      state.over = false;
+      state.score = 0;
+      state.combo = 0;
+      state.time = 60;
+      state.spawnTimer = 0;
+      state.powerTimer = 6;
+      state.shake = 0;
+      state.message = "SHADOW IN";
+      state.messageTimer = 1;
+      state.slow = 0;
+      state.fever = 0;
+      state.feverTime = 0;
+      state.maxCombo = 0;
+      state.kills = 0;
+      state.perfects = 0;
+      state.deepKills = 0;
+      state.feverKills = 0;
+      state.nearMiss = 0;
+      mole.x = world.w * 0.5;
+      mole.y = world.floor - 28;
+      mole.vx = 0;
+      mole.underground = true;
+      mole.surfacing = 0;
+      mole.depth = 0.48;
+      mole.oxygen = 1;
+      mole.stamina = 1;
+      mole.invuln = 1;
+      mole.dash = 0;
+      mole.clones = 0;
+      enemies = [];
+      particles = [];
+      slashes = [];
+      powerups = [];
+      for (let i = 0; i < 4; i += 1) spawnEnemy(i * 0.7);
+      overlay.style.display = "none";
+      updateHud();
+    }
+
+    function spawnEnemy(delay = 0) {
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const dir = side < 0 ? 1 : -1;
+      const speed = 70 + Math.random() * 55 + state.time * 0.9;
+      const roll = Math.random();
+      const type = roll < 0.11 ? "bomber" : roll < 0.22 ? "sensor" : roll < 0.38 ? "guard" : "scout";
+      enemies.push({
+        x: side < 0 ? -60 - delay * 120 : world.w + 60 + delay * 120,
+        y: world.ground - 12,
+        vx: dir * speed,
+        dir,
+        alert: 0,
+        alive: true,
+        type,
+        pulse: 1.2 + Math.random() * 1.4,
+        boom: 0,
+        step: Math.random() * 10
+      });
+    }
+
+    function spawnPowerup() {
+      const names = ["분신술", "연막", "표창비"];
+      powerups.push({
+        x: 80 + Math.random() * (world.w - 160),
+        y: world.ground + 92 + Math.random() * (world.floor - world.ground - 150),
+        r: 15,
+        name: names[Math.floor(Math.random() * names.length)],
+        t: 8
+      });
+    }
+
+    function addParticles(x, y, color, count, force = 1) {
+      for (let i = 0; i < count; i += 1) {
+        const a = Math.random() * Math.PI * 2;
+        const s = (40 + Math.random() * 180) * force;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s - 50,
+          life: 0.35 + Math.random() * 0.55,
+          max: 0.9,
+          color
+        });
+      }
+    }
+
+    function slashAt(x, y, big = false) {
+      slashes.push({ x, y, r: big ? 72 : 48, life: 0.18, big });
+      addParticles(x, y, "#fff0a8", big ? 26 : 16, big ? 1.4 : 1);
+      state.shake = Math.max(state.shake, big ? 16 : 9);
+    }
+
+    function currentMultiplier() {
+      const depthBonus = 1 + mole.depth * 1.5;
+      const feverBonus = state.feverTime > 0 ? 2 : 1;
+      return depthBonus * feverBonus;
+    }
+
+    function addKill(enemy, base, chain = false) {
+      enemy.alive = false;
+      state.combo += 1;
+      state.kills += 1;
+      state.maxCombo = Math.max(state.maxCombo, state.combo);
+      if (mole.depth > 0.68) state.deepKills += 1;
+      if (state.feverTime > 0) state.feverKills += 1;
+
+      const gain = Math.round((base + state.combo * 18) * currentMultiplier());
+      state.score += gain;
+      state.fever = Math.min(1, state.fever + (chain ? 0.04 : 0.09));
+      slashAt(enemy.x, enemy.y - 28, state.combo % 10 === 0 || state.feverTime > 0 || chain);
+
+      if (enemy.type === "bomber") {
+        enemy.boom = 0.22;
+        enemies.forEach((other) => {
+          if (other !== enemy && other.alive && Math.abs(other.x - enemy.x) < 130) {
+            addKill(other, 90, true);
+          }
+        });
+        addParticles(enemy.x, enemy.y - 20, "#ff5c7a", 42, 1.6);
+      }
+    }
+
+    function triggerFever() {
+      state.fever = 0;
+      state.feverTime = 5.5;
+      state.slow = 0.65;
+      state.message = "FEVER TIME";
+      state.messageTimer = 1.1;
+      mole.clones = 3;
+      addParticles(mole.x, mole.y - 40, "#ffd166", 60, 1.7);
+      showCombo("FEVER x2");
+    }
+
+    function surfaceAttack() {
+      if (!state.running || !mole.underground || mole.stamina < 0.16) return;
+      mole.underground = false;
+      mole.surfacing = 0.34;
+      mole.stamina -= state.feverTime > 0 ? 0.08 : 0.16;
+      const radius = 64 + Math.min(state.combo, 30) * 1.2 + (state.feverTime > 0 ? 34 : 0);
+      let hits = 0;
+      enemies.forEach((enemy) => {
+        if (!enemy.alive) return;
+        const dx = Math.abs(enemy.x - mole.x);
+        if (dx < radius && Math.abs(enemy.y - world.ground) < 40) {
+          hits += 1;
+          const typeBonus = enemy.type === "guard" ? 80 : enemy.type === "sensor" ? 120 : enemy.type === "bomber" ? 60 : 0;
+          addKill(enemy, 100 + typeBonus);
+        }
+      });
+
+      if (hits) {
+        mole.oxygen = Math.min(1, mole.oxygen + 0.16 + hits * 0.03);
+        mole.clones = Math.min(3, Math.floor(state.combo / 10));
+        state.perfects += 1;
+        showCombo(hits > 1 ? `DOUBLE CUT x${state.combo}` : `PERFECT x${state.combo}`);
+        if (state.fever >= 1 && state.feverTime <= 0) triggerFever();
+        if (state.combo > 0 && state.combo % 10 === 0) {
+          state.score += 500;
+          state.slow = 0.45;
+          state.message = "분신술 발동";
+          state.messageTimer = 0.75;
+        }
+      } else {
+        if (state.combo >= 8) state.nearMiss = Math.max(state.nearMiss, state.combo);
+        state.combo = 0;
+        state.message = "허공 베기";
+        state.messageTimer = 0.5;
+        state.shake = Math.max(state.shake, 4);
+      }
+    }
+
+    function showCombo(text) {
+      comboPop.textContent = text;
+      comboPop.classList.remove("show");
+      requestAnimationFrame(() => comboPop.classList.add("show"));
+      window.clearTimeout(showCombo.timer);
+      showCombo.timer = window.setTimeout(() => comboPop.classList.remove("show"), 380);
+    }
+
+    function usePowerup(name) {
+      if (name === "분신술") {
+        mole.clones = 3;
+        state.combo += 3;
+      } else if (name === "연막") {
+        mole.invuln = 2.5;
+        state.slow = 0.6;
+      } else {
+        enemies.forEach((enemy) => {
+          if (Math.abs(enemy.x - mole.x) < 220) {
+            addKill(enemy, 140);
+          }
+        });
+      }
+      state.message = name;
+      state.messageTimer = 1;
+      addParticles(mole.x, mole.y - 34, "#79d87a", 34, 1.2);
+    }
+
+    function update(dt) {
+      if (!state.running) return;
+      const timeScale = state.slow > 0 ? 0.48 : 1;
+      state.time -= dt;
+      state.slow = Math.max(0, state.slow - dt);
+      state.feverTime = Math.max(0, state.feverTime - dt);
+      state.spawnTimer -= dt;
+      state.powerTimer -= dt;
+      state.messageTimer = Math.max(0, state.messageTimer - dt);
+      state.shake = Math.max(0, state.shake - dt * 40);
+      mole.invuln = Math.max(0, mole.invuln - dt);
+      mole.dash = Math.max(0, mole.dash - dt);
+
+      const left = keys.has("ArrowLeft") || keys.has("KeyA") || (touch.active && touch.x < world.w * 0.38);
+      const right = keys.has("ArrowRight") || keys.has("KeyD") || (touch.active && touch.x > world.w * 0.62);
+      const attack = keys.has("ArrowUp") || keys.has("Space") || keys.has("KeyW") || (touch.active && touch.y < world.h * 0.58);
+      const dive = keys.has("ArrowDown") || keys.has("KeyS") || (touch.active && touch.y > world.h * 0.72);
+
+      if (attack) surfaceAttack();
+      if (dive && !mole.underground && mole.surfacing < 0.2) {
+        mole.underground = true;
+        addParticles(mole.x, mole.y, "#6a4030", 12, 0.7);
+      }
+
+      if (mole.underground) {
+        if (dive) mole.depth += dt * 0.9;
+        if (attack) mole.depth -= dt * 1.2;
+        if (!dive && !attack) mole.depth += (0.48 - mole.depth) * dt * 0.9;
+        mole.depth = Math.max(0.08, Math.min(1, mole.depth));
+      }
+      mole.y = world.ground + 70 + (world.floor - world.ground - 90) * mole.depth;
+
+      const accel = mole.underground ? 1600 : 950;
+      const maxSpeed = mole.underground ? 380 : 250;
+      if (left) mole.vx -= accel * dt;
+      if (right) mole.vx += accel * dt;
+      if (!left && !right) mole.vx *= Math.pow(0.001, dt);
+      mole.vx = Math.max(-maxSpeed, Math.min(maxSpeed, mole.vx));
+      mole.x += mole.vx * dt;
+      mole.x = Math.max(36, Math.min(world.w - 36, mole.x));
+
+      if (mole.underground) {
+        mole.oxygen = Math.max(0, mole.oxygen - dt * (0.04 + mole.depth * 0.075));
+        mole.stamina = Math.min(1, mole.stamina + dt * 0.11);
+      } else {
+        mole.oxygen = Math.min(1, mole.oxygen + dt * 0.18);
+        mole.stamina = Math.min(1, mole.stamina + dt * 0.18);
+      }
+
+      mole.surfacing = Math.max(0, mole.surfacing - dt);
+      if (!mole.underground && mole.surfacing <= 0) {
+        mole.underground = true;
+      }
+
+      if (mole.oxygen <= 0) {
+        state.combo = 0;
+        mole.oxygen = 0.18;
+        mole.underground = false;
+        mole.surfacing = 0.55;
+        state.message = "숨이 찼다";
+        state.messageTimer = 0.8;
+        state.shake = 12;
+      }
+
+      if (state.spawnTimer <= 0) {
+        spawnEnemy();
+        state.spawnTimer = Math.max(0.36, 1.25 - (60 - state.time) * 0.011);
+      }
+
+      if (state.powerTimer <= 0) {
+        spawnPowerup();
+        state.powerTimer = 7 + Math.random() * 4;
+      }
+
+      enemies.forEach((enemy) => {
+        if (!enemy.alive) return;
+        enemy.step += dt * 8;
+        enemy.pulse -= dt * timeScale;
+        enemy.x += enemy.vx * dt * timeScale;
+        const seesMole = !mole.underground && Math.abs(enemy.x - mole.x) < (enemy.type === "guard" ? 95 : 75);
+        const sensorPing = enemy.type === "sensor" && enemy.pulse <= 0 && mole.underground && Math.abs(enemy.x - mole.x) < 120 && mole.depth < 0.72;
+        if (enemy.pulse <= -0.45) enemy.pulse = 1.25 + Math.random() * 1.35;
+        enemy.alert = Math.max(0, Math.min(1, enemy.alert + (seesMole || sensorPing ? dt * 4 : -dt * 2)));
+        if (enemy.alert >= 1 && mole.invuln <= 0) {
+          gameOver(enemy.type === "sensor" ? "탐지됐다" : "들켰다");
+        }
+      });
+      enemies = enemies.filter((enemy) => enemy.alive && enemy.x > -140 && enemy.x < world.w + 140);
+
+      powerups.forEach((powerup) => {
+        powerup.t -= dt;
+        const dx = powerup.x - mole.x;
+        const dy = powerup.y - mole.y;
+        if (Math.hypot(dx, dy) < 36) {
+          powerup.t = 0;
+          usePowerup(powerup.name);
+        }
+      });
+      powerups = powerups.filter((powerup) => powerup.t > 0);
+
+      particles.forEach((p) => {
+        p.life -= dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 280 * dt;
+      });
+      particles = particles.filter((p) => p.life > 0);
+
+      slashes.forEach((slash) => slash.life -= dt);
+      slashes = slashes.filter((slash) => slash.life > 0);
+
+      if (state.time <= 0) gameOver("시간 종료");
+      updateHud();
+    }
+
+    function gameOver(reason) {
+      if (!state.running) return;
+      state.running = false;
+      state.over = true;
+      state.message = reason;
+      state.best = Math.max(state.best, state.score);
+      localStorage.setItem("ninjaMoleBest", String(state.best));
+      overlay.style.display = "grid";
+      overlay.querySelector("h1").innerHTML = `${reason}<br>${state.score.toLocaleString()}`;
+      const gap = Math.max(0, state.best - state.score);
+      const recap = [
+        `최고 기록 ${state.best.toLocaleString()}점${gap ? `까지 ${gap.toLocaleString()}점` : ""}`,
+        `최대 콤보 ${state.maxCombo}`,
+        `암살 ${state.kills}회`,
+        `깊은 땅굴 처치 ${state.deepKills}회`,
+        `피버 처치 ${state.feverKills}회`
+      ];
+      if (state.nearMiss) recap.push(`${state.nearMiss}콤보에서 끊김`);
+      overlay.querySelector(".lead").textContent = recap.join(" · ");
+      startBtn.textContent = "다시 잠입";
+    }
+
+    function updateHud() {
+      scoreEl.textContent = state.score.toLocaleString();
+      comboEl.textContent = state.combo;
+      multiEl.textContent = `x${currentMultiplier().toFixed(1)}`;
+      timeEl.textContent = Math.max(0, Math.ceil(state.time));
+      oxygenEl.style.transform = `scaleX(${Math.max(0, mole.oxygen)})`;
+      staminaEl.style.transform = `scaleX(${Math.max(0, mole.stamina)})`;
+      feverEl.style.transform = `scaleX(${state.feverTime > 0 ? state.feverTime / 5.5 : state.fever})`;
+    }
+
+    function drawBackground() {
+      const w = world.w;
+      const h = world.h;
+      const g = world.ground;
+      ctx.fillStyle = "#78baf0";
+      ctx.fillRect(0, 0, w, g);
+
+      ctx.fillStyle = "rgba(255, 225, 150, 0.82)";
+      ctx.beginPath();
+      ctx.arc(w * 0.14, 72, 38, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#314323";
+      for (let i = -1; i < 9; i += 1) {
+        const x = i * 150 + 30;
+        ctx.beginPath();
+        ctx.moveTo(x, g);
+        ctx.lineTo(x + 70, g - 145);
+        ctx.lineTo(x + 145, g);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#27351e";
+      ctx.fillRect(0, g - 10, w, 24);
+
+      const soil = ctx.createLinearGradient(0, g, 0, h);
+      soil.addColorStop(0, "#6a4030");
+      soil.addColorStop(0.55, "#3a2119");
+      soil.addColorStop(1, "#24140f");
+      ctx.fillStyle = soil;
+      ctx.fillRect(0, g, w, h - g);
+
+      ctx.fillStyle = "rgba(255, 92, 122, 0.10)";
+      ctx.fillRect(0, g + (h - g) * 0.68, w, (h - g) * 0.32);
+
+      ctx.strokeStyle = "rgba(255, 239, 180, 0.08)";
+      ctx.lineWidth = 2;
+      for (let y = g + 38; y < h; y += 52) {
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 38) {
+          const yy = y + Math.sin(x * 0.02 + y) * 5;
+          if (x === 0) ctx.moveTo(x, yy);
+          else ctx.lineTo(x, yy);
+        }
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.16)";
+      ctx.beginPath();
+      ctx.ellipse(mole.x, mole.y + 12, 60, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (state.feverTime > 0) {
+        ctx.fillStyle = `rgba(255, 209, 102, ${0.08 + Math.sin(performance.now() * 0.02) * 0.03})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+    }
+
+    function drawEnemy(enemy) {
+      const x = enemy.x;
+      const y = enemy.y;
+      const bob = Math.sin(enemy.step) * 2;
+      ctx.save();
+      ctx.translate(x, y + bob);
+      ctx.scale(enemy.dir, 1);
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
+      ctx.beginPath();
+      ctx.ellipse(0, 30, 28, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = enemy.type === "guard" ? "#44212f" : enemy.type === "sensor" ? "#1f4b4f" : enemy.type === "bomber" ? "#5d2430" : "#202636";
+      ctx.fillRect(-14, -30, 28, 42);
+      ctx.fillStyle = "#161820";
+      ctx.beginPath();
+      ctx.arc(0, -38, 20, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffe1aa";
+      ctx.fillRect(-14, -42, 28, 9);
+      ctx.fillStyle = enemy.alert > 0.5 ? "#ff5c7a" : "#f7efd8";
+      ctx.fillRect(2, -40, 7, 3);
+
+      ctx.strokeStyle = "#c7d0d8";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(12, -18);
+      ctx.lineTo(36, -40);
+      ctx.stroke();
+
+      if (enemy.type === "bomber") {
+        ctx.fillStyle = "#ffd166";
+        ctx.beginPath();
+        ctx.arc(-2, -7, 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (enemy.type === "sensor") {
+        const pulse = enemy.pulse <= 0 ? Math.min(1, Math.abs(enemy.pulse) / 0.45) : 0;
+        ctx.strokeStyle = `rgba(121, 216, 122, ${0.55 - pulse * 0.35})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, 36 + pulse * 95, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      if (enemy.alert > 0) {
+        ctx.fillStyle = `rgba(255, 92, 122, ${0.15 + enemy.alert * 0.45})`;
+        ctx.beginPath();
+        ctx.moveTo(20, -36);
+        ctx.lineTo(120, -72);
+        ctx.lineTo(120, 8);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawMole() {
+      const up = mole.underground ? 0 : Math.sin((mole.surfacing / 0.34) * Math.PI) * 42 + 20;
+      const x = mole.x;
+      const baseY = mole.underground ? mole.y : world.ground + 34;
+      const y = baseY - up;
+
+      for (let i = 0; i < mole.clones; i += 1) {
+        const off = (i - 1) * 42;
+        ctx.globalAlpha = 0.2;
+        drawMoleBody(x + off, y + 10, true);
+        ctx.globalAlpha = 1;
+      }
+      drawMoleBody(x, y, false);
+    }
+
+    function drawMoleBody(x, y, ghost) {
+      ctx.save();
+      if (mole.invuln > 0 && !ghost) ctx.globalAlpha = 0.72 + Math.sin(performance.now() * 0.02) * 0.2;
+
+      ctx.fillStyle = ghost ? "#9fd6ff" : "#2b2425";
+      ctx.beginPath();
+      ctx.ellipse(x, y, 27, 34, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = ghost ? "#c7efff" : "#5b372b";
+      ctx.beginPath();
+      ctx.ellipse(x, y + 7, 18, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#101015";
+      ctx.fillRect(x - 24, y - 22, 48, 13);
+      ctx.fillStyle = "#f7efd8";
+      ctx.fillRect(x - 10, y - 18, 8, 3);
+      ctx.fillRect(x + 5, y - 18, 8, 3);
+
+      ctx.fillStyle = "#ff5c7a";
+      ctx.beginPath();
+      ctx.moveTo(x + 19, y - 22);
+      ctx.lineTo(x + 46, y - 34);
+      ctx.lineTo(x + 24, y - 10);
+      ctx.fill();
+
+      ctx.strokeStyle = "#d9edf7";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(x + 18, y + 3);
+      ctx.lineTo(x + 48, y - 16);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPowerup(powerup) {
+      ctx.save();
+      ctx.translate(powerup.x, powerup.y);
+      ctx.rotate(performance.now() * 0.004);
+      ctx.fillStyle = "#79d87a";
+      ctx.strokeStyle = "#fff4b8";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let i = 0; i < 8; i += 1) {
+        const r = i % 2 ? 9 : 18;
+        const a = i * Math.PI / 4;
+        ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawEffects() {
+      slashes.forEach((slash) => {
+        const a = slash.life / 0.18;
+        ctx.save();
+        ctx.translate(slash.x, slash.y);
+        ctx.rotate(-0.6);
+        ctx.strokeStyle = `rgba(255, 248, 212, ${a})`;
+        ctx.lineWidth = slash.big ? 12 : 8;
+        ctx.beginPath();
+        ctx.arc(0, 0, slash.r, -1.1, 0.9);
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      particles.forEach((p) => {
+        const a = Math.max(0, p.life / p.max);
+        ctx.fillStyle = p.color.replace(")", `, ${a})`).replace("rgb", "rgba");
+        if (!p.color.startsWith("rgb")) ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.min(1, a + 0.15);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2 + a * 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+    }
+
+    function drawMessage() {
+      if (state.messageTimer <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, state.messageTimer * 2);
+      ctx.fillStyle = "#fff8d4";
+      ctx.textAlign = "center";
+      ctx.font = "900 28px system-ui, sans-serif";
+      ctx.fillText(state.message, world.w / 2, world.ground + 62);
+      ctx.restore();
+    }
+
+    function render() {
+      ctx.save();
+      ctx.clearRect(0, 0, world.w, world.h);
+      if (state.shake > 0) {
+        ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
+      }
+      drawBackground();
+      powerups.forEach(drawPowerup);
+      enemies.forEach(drawEnemy);
+      drawMole();
+      drawEffects();
+      drawMessage();
+      ctx.restore();
+    }
+
+    function loop(now) {
+      const dt = Math.min(0.033, (now - last) / 1000);
+      last = now;
+      update(dt);
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("resize", resize);
+    window.addEventListener("keydown", (event) => {
+      keys.add(event.code);
+      if (event.code === "KeyR") reset();
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space"].includes(event.code)) event.preventDefault();
+    });
+    window.addEventListener("keyup", (event) => keys.delete(event.code));
+    canvas.addEventListener("pointerdown", (event) => {
+      touch.active = true;
+      const rect = canvas.getBoundingClientRect();
+      touch.x = event.clientX - rect.left;
+      touch.y = event.clientY - rect.top;
+      if (!state.running && overlay.style.display !== "none") reset();
+    });
+    canvas.addEventListener("pointermove", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      touch.x = event.clientX - rect.left;
+      touch.y = event.clientY - rect.top;
+    });
+    window.addEventListener("pointerup", () => { touch.active = false; });
+    startBtn.addEventListener("click", reset);
+
+    resize();
+    render();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
