@@ -137,6 +137,22 @@
       background: linear-gradient(90deg, #ff5c7a, #ffd166, #79d87a);
     }
 
+    .help-toggle {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      width: 46px;
+      height: 46px;
+      min-width: 0;
+      padding: 0;
+      border-radius: 50%;
+      color: #17130f;
+      font-size: 24px;
+      line-height: 1;
+      pointer-events: auto;
+      z-index: 5;
+    }
+
     .overlay {
       position: absolute;
       inset: 0;
@@ -170,6 +186,32 @@
       font-size: 16px;
       line-height: 1.5;
       max-width: 42ch;
+    }
+
+    .briefing {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0 0 20px;
+      text-align: left;
+    }
+
+    .briefing div {
+      min-height: 58px;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      font-size: 13px;
+      line-height: 1.35;
+      color: rgba(247, 239, 216, 0.82);
+    }
+
+    .briefing b {
+      display: block;
+      margin-bottom: 3px;
+      color: #fff8d4;
+      font-size: 13px;
     }
 
     .keys {
@@ -261,6 +303,10 @@
         justify-self: stretch;
         width: 100%;
       }
+
+      .briefing {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -284,15 +330,38 @@
     </section>
 
     <div class="combo-pop" id="comboPop">PERFECT x10</div>
+    <button class="help-toggle" id="helpBtn" type="button" aria-label="게임 설명">?</button>
 
     <section class="overlay" id="overlay">
       <div class="panel">
         <h1>그림자<br>땅굴</h1>
         <p class="lead">깊이 잠수할수록 점수 배율이 오릅니다. 적의 발밑에서 튀어나와 베고, 피버를 터뜨리세요.</p>
+        <div class="briefing">
+          <div><b>목표</b>60초 동안 최대한 많은 적을 암살해 최고 점수를 노립니다.</div>
+          <div><b>핵심</b>깊게 잠수하면 배율이 오르지만 산소가 더 빨리 줄어듭니다.</div>
+          <div><b>피버</b>연속 암살로 게이지를 채우면 공격 범위와 점수가 폭발합니다.</div>
+          <div><b>주의</b>탐지병 파동과 지상 시야에 걸리면 바로 실패합니다.</div>
+        </div>
         <div class="keys" aria-hidden="true">
           <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>Space</kbd><kbd>R</kbd>
         </div>
         <button id="startBtn" type="button">잠입 시작</button>
+      </div>
+    </section>
+
+    <section class="overlay" id="helpOverlay" style="display: none;">
+      <div class="panel">
+        <h1>작전<br>브리핑</h1>
+        <p class="lead">땅속에서 위치를 잡고, 적이 머리 위를 지나는 순간 튀어나와 베세요.</p>
+        <div class="briefing">
+          <div><b>이동</b>←/→ 또는 A/D로 이동합니다. 모바일은 화면 좌우를 누릅니다.</div>
+          <div><b>공격</b>↑/Space/W 또는 화면 위쪽 터치로 튀어나와 공격합니다.</div>
+          <div><b>잠수</b>↓/S 또는 화면 아래쪽 터치로 더 깊게 들어갑니다.</div>
+          <div><b>배율</b>깊은 땅굴일수록 점수 배율이 높고 산소 소모도 커집니다.</div>
+          <div><b>적</b>붉은 적은 폭발, 초록 파동 적은 땅속을 탐지합니다.</div>
+          <div><b>재시작</b>R을 누르거나 실패 후 다시 잠입을 누릅니다.</div>
+        </div>
+        <button id="closeHelpBtn" type="button">확인</button>
       </div>
     </section>
   </main>
@@ -302,7 +371,10 @@
     const ctx = canvas.getContext("2d");
     const shell = document.getElementById("shell");
     const overlay = document.getElementById("overlay");
+    const helpOverlay = document.getElementById("helpOverlay");
     const startBtn = document.getElementById("startBtn");
+    const helpBtn = document.getElementById("helpBtn");
+    const closeHelpBtn = document.getElementById("closeHelpBtn");
     const scoreEl = document.getElementById("score");
     const comboEl = document.getElementById("combo");
     const multiEl = document.getElementById("multi");
@@ -992,6 +1064,12 @@
     });
     window.addEventListener("pointerup", () => { touch.active = false; });
     startBtn.addEventListener("click", reset);
+    helpBtn.addEventListener("click", () => {
+      helpOverlay.style.display = "grid";
+    });
+    closeHelpBtn.addEventListener("click", () => {
+      helpOverlay.style.display = "none";
+    });
 
     resize();
     render();
