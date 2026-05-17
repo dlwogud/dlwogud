@@ -393,7 +393,7 @@
           <div><b>이동</b>←/→ 또는 A/D로 이동합니다. 모바일은 화면 좌우를 누릅니다.</div>
           <div><b>공격</b>↑/Space/W 또는 화면 위쪽 터치로 튀어나와 공격합니다.</div>
           <div><b>잠수</b>↓/S 또는 화면 아래쪽 터치로 더 깊게 들어갑니다.</div>
-          <div><b>자원</b>오래 땅속에 있으면 산소와 기력이 함께 줄어듭니다.</div>
+          <div><b>자원</b>오래 땅속에 있으면 산소가 줄지만 공격은 빠르게 이어갈 수 있습니다.</div>
           <div><b>적</b>붉은 적은 폭발, 초록 파동 적은 땅속을 탐지합니다.</div>
           <div><b>랭킹</b>게임 종료 후 점수만 익명으로 최고점 랭킹에 기록됩니다.</div>
         </div>
@@ -645,10 +645,9 @@
     }
 
     function surfaceAttack() {
-      if (!state.running || !mole.underground || mole.stamina < 0.16) return;
+      if (!state.running || !mole.underground) return;
       mole.underground = false;
       mole.surfacing = 0.34;
-      mole.stamina -= state.feverTime > 0 ? 0.08 : 0.16;
       const radius = 58 + Math.min(state.combo, 30) * 1.2 + (state.feverTime > 0 ? 34 : 0) + (mole.cloneTime > 0 ? 18 : 0);
       let hits = 0;
       enemies.forEach((enemy) => {
@@ -838,10 +837,10 @@
 
       if (mole.underground) {
         mole.oxygen = Math.max(0, mole.oxygen - dt * (0.04 + mole.depth * 0.075));
-        mole.stamina = Math.max(0, mole.stamina - dt * (0.016 + mole.depth * 0.028));
+        mole.stamina = Math.min(1, mole.stamina + dt * 0.16);
       } else {
         mole.oxygen = Math.min(1, mole.oxygen + dt * 0.18);
-        mole.stamina = Math.min(1, mole.stamina + dt * (state.chaseTime > 0 ? 0.08 : 0.22));
+        mole.stamina = Math.min(1, mole.stamina + dt * 0.26);
       }
 
       mole.surfacing = Math.max(0, mole.surfacing - dt);
@@ -857,16 +856,6 @@
         state.message = "숨이 찼다";
         state.messageTimer = 0.8;
         state.shake = 12;
-      }
-
-      if (mole.stamina <= 0 && mole.underground) {
-        state.combo = 0;
-        mole.stamina = 0.2;
-        mole.underground = false;
-        mole.surfacing = 0.55;
-        state.message = "기력 바닥";
-        state.messageTimer = 0.8;
-        state.shake = 10;
       }
 
       if (state.spawnTimer <= 0) {
